@@ -20,7 +20,7 @@ pygame.display.set_caption("Chess Drag & Drop Demo")
 clock = pygame.time.Clock()
 
 # ---------------- Load board ----------------
-board_img = pygame.image.load("Front/board_plain_01.png").convert_alpha()
+board_img = pygame.image.load("AI-proj/Front/board_plain_01.png").convert_alpha()
 board_img = pygame.transform.scale(
     board_img,
     (BOARD_PIXEL_SIZE + FRAME_THICKNESS * 2, BOARD_PIXEL_SIZE + FRAME_THICKNESS * 2)
@@ -38,11 +38,11 @@ board_rect.topleft = (grid_origin_x - FRAME_THICKNESS,
 
 # ---------------- Piece Assets ----------------
 PIECE_IMG = {
-    "K": "Front/W_King.png",
-    "Q": "Front/W_Queen.png",
-    "R": "Front/W_Rook.png",
-    "B": "Front/W_Bishop.png",
-    "P": "Front/W_Pawn.png",
+    "K": "AI-proj/Front/W_King.png",
+    "Q": "AI-proj/Front/W_Queen.png",
+    "R": "AI-proj/Front/W_Rook.png",
+    "B": "AI-proj/Front/W_Bishop.png",
+    "P": "AI-proj/Front/W_Pawn.png",
 }
 
 

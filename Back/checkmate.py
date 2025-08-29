@@ -63,8 +63,8 @@ def checkmate(board_str):
                     curr_x += dx
                     continue
                 if curr == piece or (piece == 'Q' and curr == 'Q'):
-                    print("Success!!! You Caught The KING!!!")
-                    return
+                    #print("Success!!! You Caught The KING!!!")
+                    return True
                 else:
                     break
 
@@ -73,7 +73,8 @@ def checkmate(board_str):
         curr_y, curr_x = yk + dy, xk + dx
         if 0 <= curr_y < size and 0 <= curr_x < size:
             if board[curr_y][curr_x] == 'P':
-                print("Success!!! You Caught The KING!!!")
-                return
+                #print("Success!!! You Caught The KING!!!")
+                return True
 
-    print("Fail!!! Next Time try To Catch the KING!!!")
+    #print("Fail!!! Next Time try To Catch the KING!!!")
+    return False
