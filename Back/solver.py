@@ -4,7 +4,7 @@ class GameState:
     def __init__(self, size=8):
         self.board = [['.' for _ in range(size)] for _ in range(size)]
         self.size = size
-        self.remaining_pieces = {'Q': 1, 'R': 2, 'B': 2, 'P': 8, 'N': 1} #can remove Knight if we won't use that
+        self.remaining_pieces = {'Q': 1, 'R': 2, 'B': 2, 'P': 8}
         self.can_win = False
 
 def get_empty_squares(board):
@@ -69,10 +69,13 @@ def find_complete_solution(king_pos, board_size=8):
     initial_state = GameState(board_size)
     solution = dfs_search(initial_state, king_pos, find_solution=True)
     if solution:
-        print("Solution found!")
-        print("Place pieces in this order:")
+        current_state = GameState(board_size)
         for i, (piece, row, col) in enumerate(solution, 1):
-            print(f"{i}. Place {piece} at ({row}, {col})")
+            current_state = place_piece(current_state, piece, row, col)
+            board_str = board_to_string(current_state.board, king_pos)
+            remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
+            print(f"   Board state:\n{board_str}")
+            print(f"   Remaining pieces: {remaining_str}\n")
         return solution
     else:
         print("No solution exists for this king position")
@@ -87,10 +90,19 @@ def find_remaining_solution(current_board, remaining_pieces, king_pos):
     solution = dfs_search(state, king_pos, find_solution=True)
     
     if solution:
+        current_state = GameState(board_size)
+        current_state.board = [row[:] for row in current_board]
+        current_state.remaining_pieces = remaining_pieces.copy()
+        
         print("Solution found with remaining pieces!")
         print("Continue by placing:")
         for i, (piece, row, col) in enumerate(solution, 1):
             print(f"{i}. Place {piece} at ({row}, {col})")
+            current_state = place_piece(current_state, piece, row, col)
+            board_str = board_to_string(current_state.board, king_pos)
+            remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
+            print(f"   Board state:\n{board_str}")
+            print(f"   Remaining pieces: {remaining_str}\n")
         return solution
     else:
         print("No solution possible with remaining pieces")
@@ -99,10 +111,22 @@ def find_remaining_solution(current_board, remaining_pieces, king_pos):
 if __name__ == "__main__":
     # Test finding a solution
     print("Testing solution finder...")
-    solution = find_complete_solution((7, 7))
+    solution = find_complete_solution((1, 5))
+
+    print("Testing remaining pieces finder...")
+    remaining_pieces = {'Q': 0, 'R': 0, 'B': 0, 'P': 0}
+    test_board = [['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', 'P', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', 'P', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.']]
+    solution = find_remaining_solution(test_board, remaining_pieces, (1, 5))
     
-    if solution:
-        print(f"\nFound solution with {len(solution)} moves")
-    else:
-        print("No solution found")
+    can_still_win_result = can_still_win(test_board, remaining_pieces, (1, 5))
+    print(f"Can still win: {can_still_win_result}")
+                                        
+    
 
