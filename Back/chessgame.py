@@ -1,6 +1,9 @@
+from gamestate import GameState
 from checkmate import checkmate
 from solver import can_still_win, find_complete_solution, find_remaining_solution
+
 import random
+
 
 class GameState:
     def __init__(self, size=8):

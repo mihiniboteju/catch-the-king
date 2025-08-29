@@ -1,5 +1,5 @@
 from checkmate import checkmate
-from chessgame import GameState
+from gamestate import GameState
 
 def get_empty_squares(board):
     empty = []
