@@ -4,16 +4,14 @@ import sys
 pygame.init()
 
 # ---------------- Settings ----------------
-SCREEN_W, SCREEN_H = 800, 800
+SCREEN_W, SCREEN_H = 700, 700
 BOARD_SIZE = 8              # 8x8 chessboard
-CELL_SIZE = 80              # base cell size
-SCALE_FACTOR = 1.5          # increase to upscale everything
+CELL_SIZE = 50
 PANEL_HEIGHT = 150
 FRAME_THICKNESS = 20        # edge/frame width of board sprite
-bg = (50, 50, 50)
+bg = (240,244,220)
 
-# apply scaling
-CELL_SIZE = int(CELL_SIZE * SCALE_FACTOR)
+# board area size
 BOARD_PIXEL_SIZE = BOARD_SIZE * CELL_SIZE
 
 # create window
@@ -22,13 +20,11 @@ pygame.display.set_caption("Chess Drag & Drop Demo")
 clock = pygame.time.Clock()
 
 # ---------------- Load board ----------------
-board_img = pygame.image.load("board_plain_01.png").convert_alpha()
-orig_w, orig_h = board_img.get_size()
-
-# scale board proportionally
-scale_w = BOARD_PIXEL_SIZE + FRAME_THICKNESS
-scale_h = BOARD_PIXEL_SIZE + FRAME_THICKNESS
-board_img = pygame.transform.smoothscale(board_img, (scale_w, scale_h))
+board_img = pygame.image.load("Front/board_plain_01.png").convert_alpha()
+board_img = pygame.transform.scale(
+    board_img,
+    (BOARD_PIXEL_SIZE + FRAME_THICKNESS * 2, BOARD_PIXEL_SIZE + FRAME_THICKNESS * 2)
+)
 
 # compute playable grid area
 INNER_SIZE = BOARD_PIXEL_SIZE
@@ -42,11 +38,11 @@ board_rect.topleft = (grid_origin_x - FRAME_THICKNESS,
 
 # ---------------- Piece Assets ----------------
 PIECE_IMG = {
-    "K": "W_King.png",
-    "Q": "W_Queen.png",
-    "R": "W_Rook.png",
-    "B": "W_Bishop.png",
-    "P": "W_Pawn.png",
+    "K": "Front/W_King.png",
+    "Q": "Front/W_Queen.png",
+    "R": "Front/W_Rook.png",
+    "B": "Front/W_Bishop.png",
+    "P": "Front/W_Pawn.png",
 }
 
 
@@ -66,7 +62,7 @@ class Piece(pygame.sprite.Sprite):
         super().__init__()
         self.name = name
         self.image = pygame.image.load(image).convert_alpha()
-        self.image = pygame.transform.smoothscale(self.image, (CELL_SIZE, CELL_SIZE))
+        self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE *2 ))
         self.rect = self.image.get_rect(topleft=pos)
         self.dragging = False
 
