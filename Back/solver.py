@@ -72,17 +72,20 @@ def can_still_win(current_board, remaining_pieces, king_pos):
     state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
     return dfs_search(state, king_pos)
 
-def find_complete_solution(king_pos, board_size=8):
+def find_complete_solution(king_pos, available_pieces, board_size=8):
     initial_state = GameState(board_size)
+    if available_pieces:
+        initial_state.remaining_pieces = available_pieces.copy()
     solution = dfs_search(initial_state, king_pos, find_solution=True)
     if solution:
         current_state = GameState(board_size)
         for i, (piece, row, col) in enumerate(solution, 1):
             current_state = place_piece(current_state, piece, row, col)
             board_str = board_to_string(current_state.board, king_pos)
-            remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
-            print(f"   Board state:\n{board_str}")
+            # remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
+            # print(f"   Board state:\n{board_str}")
             # print(f"   Remaining pieces: {remaining_str}\n")
+        print(f"   Board state:\n{board_str}")
         return solution
     else:
         print("No solution exists for this king position")
@@ -94,16 +97,15 @@ def find_remaining_solution(current_board, remaining_pieces, king_pos):
     
     if solution:
         current_state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
-        
-        print("Solution found with remaining pieces!")
-        print("Continue by placing:")
+    
         for i, (piece, row, col) in enumerate(solution, 1):
-            print(f"{i}. Place {piece} at ({row}, {col})")
+            # print(f"{i}. Place {piece} at ({row}, {col})")
             current_state = place_piece(current_state, piece, row, col)
             board_str = board_to_string(current_state.board, king_pos)
-            remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
-            print(f"   Board state:\n{board_str}")
+            # remaining_str = ', '.join([f"{p}: {count}" for p, count in current_state.remaining_pieces.items() if count > 0])
+            # print(f"   Board state:\n{board_str}")
             # print(f"   Remaining pieces: {remaining_str}\n")
+        print(f"   Board state:\n{board_str}")
         return solution
     else:
         print("No solution possible with remaining pieces")
