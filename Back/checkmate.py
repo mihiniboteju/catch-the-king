@@ -1,80 +1,76 @@
+from collections import deque
+
 def checkmate(board_str):
-    # Parse each line based on whether it contains spaces
+    # =============================
+    # Parse board
+    # =============================
     board = []
-    for row in board_str.strip().split('\n'): #['. . . K . .']
-        if ' ' in row:
+    for row in board_str.strip().split("\n"):
+        if " " in row:
             board.append(row.strip().split())  # spaced format
         else:
-            board.append(list(row.strip())) 
-
-    #board will look something like this:
-    # [['.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.']]
-    #board is a list of lists, each representing a row of the chessboard
-
+            board.append(list(row.strip()))
     size = len(board)
 
-    #Checking square board or not!
-    for row in board:
-        if len(row) != len(board):
-            print("Error: The board is not square!")
-            return
-        
-    # For checking the number of Kings
-    king_count = sum(row.count('K') for row in board)
-    if king_count == 0:
-        print("Fail!!! No King on the board!!!")
-        return
-    elif king_count > 1:
-        print("Fail!!! There must be exactly one King on the board!!!")
-        return
-    
-    # Find the King position
+    # Find King
     king_pos = None
     for y in range(size):
         for x in range(size):
-            if board[y][x] == 'K':
-                king_pos = (y, x) #assing the position of the King
+            if board[y][x] == "K":
+                king_pos = (y, x)
                 break
         if king_pos:
             break
 
-    # if not king_pos: #if the King is not found
-    #     print("Fail")
-    #     return
+    if not king_pos:
+        print("Fail!!! No King on the board!!!")
+        return False
 
-    yk, xk = king_pos # unpack the position of the King
+    yk, xk = king_pos
 
-    # Directions for each piece type
-    directions = {
-        'R': [(-1, 0), (1, 0), (0, -1), (0, 1)],       # Up, Down, Left, Right
-        'B': [(-1, -1), (-1, 1), (1, -1), (1, 1)],     # Up-Left, Up-Right, Down-Left, Down-Right
-        'Q': [(-1, 0), (1, 0), (0, -1), (0, 1), 
-              (-1, -1), (-1, 1), (1, -1), (1, 1)],     # Rook + Bishop
-    }
+    # =============================
+    # Pawn attack rule
+    # =============================
+    def pawn_attacks(yk, xk, py, px):
+        # pawns move "up", so they only attack from y-1
+        return (py == yk - 1 and (px == xk - 1 or px == xk + 1))
 
-    # Check for directional attackers: Rook, Bishop, Queen
-    for piece, dirs in directions.items(): #piece= R, B, Q; dirs= directions[piece]
-        for dy, dx in dirs:
-            curr_y, curr_x = yk + dy, xk + dx
-            while 0 <= curr_y < size and 0 <= curr_x < size:
-                curr = board[curr_y][curr_x]
-                if curr == '.':
-                    curr_y += dy
-                    curr_x += dx
+    # =============================
+    # BFS layer by layer
+    # =============================
+    def is_king_in_check():
+        visited = set()
+        queue = deque([(yk, xk, 0)])  # (y, x, distance)
+
+        while queue:
+            y, x, d = queue.popleft()
+            if (y, x) in visited:
+                continue
+            visited.add((y, x))
+
+            # skip king’s own square
+            if d > 0:
+                piece = board[y][x]
+                if piece != '.':
+                    # Check piece rules
+                    if piece == 'P' and pawn_attacks(yk, xk, y, x):
+                        return True
+                    if piece == 'R' and (y == yk or x == xk):
+                        return True
+                    if piece == 'B' and abs(y - yk) == abs(x - xk):
+                        return True
+                    if piece == 'Q' and (y == yk or x == xk or abs(y - yk) == abs(x - xk)):
+                        return True
+                    # Blocked by another piece
                     continue
-                if curr == piece or (piece == 'Q' and curr == 'Q'):
-                    #print("Success!!! You Caught The KING!!!")
-                    return True
-                else:
-                    break
 
-    # if there are no directional attackers, check for Pawns
-    for dy, dx in [(1, -1), (1, 1)]:
-        curr_y, curr_x = yk + dy, xk + dx
-        if 0 <= curr_y < size and 0 <= curr_x < size:
-            if board[curr_y][curr_x] == 'P':
-                #print("Success!!! You Caught The KING!!!")
-                return True
+            # expand neighbors layer by layer
+            for dy, dx in [(-1,0),(1,0),(0,-1),(0,1),
+                           (-1,-1),(-1,1),(1,-1),(1,1)]:
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < size and 0 <= nx < size and (ny, nx) not in visited:
+                    queue.append((ny, nx, d + 1))
 
-    #print("Fail!!! Next Time try To Catch the KING!!!")
-    return False
+        return False
+
+    return is_king_in_check()
