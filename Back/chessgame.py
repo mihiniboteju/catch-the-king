@@ -4,14 +4,6 @@ from solver import can_still_win, find_complete_solution, find_remaining_solutio
 
 import random
 
-
-class GameState:
-    def __init__(self, size=8):
-        self.board = [['.' for _ in range(size)] for _ in range(size)]
-        self.size = size
-        self.remaining_pieces = {'Q': 1, 'R': 2, 'B': 2, 'P': 8}
-        self.used_positions = set()
-
 def kpos_generator(size): 
     return random.randint(0, size - 1)
 
@@ -41,40 +33,36 @@ def check_win_possibility(game_state, king_pos):
         return False
     else:
         print("There is still a possibility to catch the King with the remaining pieces!!!")
-        # while True:
-        #     try:
-        #         print("1. Finding Complete Solution!!!")
-        #         print("2. Finding Solution From Remaining Pieces!!!")
-        #         print("3.Continue Game!!!")
-        #         choice = input("\nEnter your choice (1,2, or 3): ").strip()
-        #         if choice == '1':
-        #             print("\n=== Complete Solution ===")
-        #             solution = find_complete_solution(king_pos, game_state.size)
-        #             if solution:
-        #                 print(f"Total moves needed: {len(solution)}")
-        #             break
-        #         elif choice == '2':
-        #             print("\n=== Solution with Remaining Pieces ===")
-        #             solution = find_remaining_solution(current_board, remaining, king_pos)
-        #             if solution:
-        #                 print(f"Move needed with remaining pieces: {len(solution)}")
-        #             break
-        #         elif choice == '3':
-        #             print("Continuing the Game...")
-        #         else:
-        #             print("Please Enter 1 or 2 or 3")
-        #     except:
-        #         print("Please Enter a valid choice")
-        return True
+        while True:
+            try:
+                print("You Have option to choose Yes or No to see the Solution for remaining pieces. If you would like to see the solution, type 'y' and The soultion will show and the Game End. If not the game will continue!")
+                findrem_sol = input("\nDo you want to see the solution for remaining piece?(y/n)").strip().lower()
+                if findrem_sol == 'y':
+                    print("\n=== Solution with Remaining Pieces ===")
+                    solution = find_remaining_solution(current_board, remaining, king_pos)
+                    if solution:
+                        print(f"Move needed with remaining pieces: {len(solution)}")
+                    else:
+                        print("No soulution found!!!")
+                    print("Game Over!!!")
+                    return False
+                    break
+                elif findrem_sol == 'n':
+                    print("Continuing the Game...")
+                    return True
+                else:
+                    print("Please Enter y or n")
+            except:
+                print("Please Enter a valid choice")
     
-def find_solution(game_state, king_pos):
-    offer_help = input("Do you want to see a possible solution to catch the King? (y/n): ").strip().lower()
-    if offer_help == 'y':
-        current_board = [row[:] for row in game_state.board]
-        remaining = game_state.remaining_pieces.copy()
-        solution = find_remaining_solution(current_board, remaining, king_pos)
-        if not solution:
-            print("No possible solution found with the remaining pieces.")
+# def find_solution(game_state, king_pos):
+#     offer_help = input("Do you want to see a possible solution to catch the King? (y/n): ").strip().lower()
+#     if offer_help == 'y':
+#         current_board = [row[:] for row in game_state.board]
+#         remaining = game_state.remaining_pieces.copy()
+#         solution = find_remaining_solution(current_board, remaining, king_pos)
+#         if not solution:
+#             print("No possible solution found with the remaining pieces.")
 
 
 def solution_analysis(game_state, king_pos,game_won=False):
@@ -84,28 +72,22 @@ def solution_analysis(game_state, king_pos,game_won=False):
         print("Game Over!!! Best of luck next time!")
     while True:
         try:
-            print("1. Finding Complete Solution!!!")
-            print("2. Finding Solution From Remaining Pieces!!!")
-            choice = input("\nEnter your choice (1 or 2): ").strip()
-            if choice in ['1', '2']:
-                break
+            findcom_sol = input("\nDo you want to see the complete solution?(y/n)").strip().lower()
+            if findcom_sol == 'y':
+                print("\n=== Complete Solution ===")
+                solution = find_complete_solution(king_pos, game_state.remaining_pieces, game_state.size)
+                if solution:
+                    print(f"Total solution Move: {len(solution)}")
+                else:
+                    print("No soulution found!!!")
+            elif findcom_sol == 'n':
+                print("Thank You for Playing!!!")
             else:
-                print("Please Enter 1 or 2")
+                print("Please Enter y or n")
         except:
             print("Please Enter a valid choice")
-    
-    if choice == '1':
-        solution = find_complete_solution(king_pos, game_state.size)
-        if solution:
-            print(f"Total solution steps: {len(solution)}")
-    elif choice == '2':
-        current_board = [row[:] for row in game_state.board]
-        remaining = game_state.remaining_pieces.copy()
-        display_board(current_board, hide_king=False, king_pos=king_pos)
-        solution = find_remaining_solution(current_board, remaining, king_pos)
-        if solution:
-            print(f"Remaining solution steps: {len(solution)}")
-    
+        break
+            
 def chessgame():
     print("==== Let's Play Chess Game (Catch The King If You Can!!!) ====")
 
@@ -157,12 +139,12 @@ def chessgame():
         print(f"\nRemaining pieces: {game_state.remaining_pieces}")
         
         # Check if player can still win before asking for piece input
-        can_continue = check_win_possibility(game_state, king_pos)
-        if not can_continue:
-            # Player chose to see that they can't win, but let them continue if they want
-            continue_anyway = input("\nDo you want to continue playing anyway? (y/n): ").strip().lower()
-            if continue_anyway != 'y':
-                break
+        # can_continue = check_win_possibility(game_state, king_pos)
+        # if not can_continue:
+        #     # Player chose to see that they can't win, but let them continue if they want
+        #     continue_anyway = input("\nDo you want to continue playing anyway? (y/n): ").strip().lower()
+        #     if continue_anyway != 'y':
+        #         break
         while True:
             piece = input("Choose a piece to place (Q/R/B/P): ").upper().strip()
             if piece in game_state.remaining_pieces:
@@ -176,9 +158,11 @@ def chessgame():
         while True:
             try:
                 row = int(input(f"Enter row for {piece} (0 to {board_size-1}): "))
+                if not (0 <= row < board_size):
+                    print("The Input Position Is Out Of Range!!!")
+                    continue
                 col = int(input(f"Enter column for {piece} (0 to {board_size-1}): "))
-                
-                if not (0 <= row < board_size and 0 <= col < board_size):
+                if not (0 <= col < board_size):
                     print("The Input Position Is Out Of Range!!!")
                     continue
                 
@@ -213,7 +197,9 @@ def chessgame():
         
         # After placing a piece, check win possibility and offer solutions again
         print(f"\n=== Analysis after placing {piece} at ({row}, {col}) ===")
-        check_win_possibility(game_state, king_pos)
+        can_continue = check_win_possibility(game_state, king_pos)
+        if not can_continue:
+            return
     
 #This is for when all pieces are used and the player loses the game state
     print("\nGame Over!!! You have used all your pieces but could not catch the King!")
