@@ -75,7 +75,7 @@ def solution_analysis(game_state, king_pos,game_won=False):
             findcom_sol = input("\nDo you want to see the complete solution?(y/n)").strip().lower()
             if findcom_sol == 'y':
                 print("\n=== Complete Solution ===")
-                solution = find_complete_solution(king_pos, board_size=8)
+                solution = find_complete_solution(king_pos, game_state.remaining_pieces, game_state.size)
                 if solution:
                     print(f"Total solution Move: {len(solution)}")
                 else:
