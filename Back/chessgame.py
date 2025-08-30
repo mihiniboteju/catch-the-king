@@ -199,14 +199,15 @@ def chessgame():
         print(f"\n=== Analysis after placing {piece} at ({row}, {col}) ===")
         can_continue = check_win_possibility(game_state, king_pos)
         if not can_continue:
-            return
-    
-#This is for when all pieces are used and the player loses the game state
-    print("\nGame Over!!! You have used all your pieces but could not catch the King!")
-    print(f"The King was hiding at position ({king_row}, {king_col})")
-    print("You Lose! Best of luck next time!")
-    display_board(game_state.board, hide_king=False, king_pos=king_pos)
-    solution_analysis(game_state, king_pos, game_won=False)
+            break
+        
+        #This is for when all pieces are used and the player loses the game state
+    if all(count == 0 for count in game_state.remaining_pieces.values()):
+        print("\nGame Over!!! You have used all your pieces but could not catch the King!")
+        print(f"The King was hiding at position ({king_row}, {king_col})")
+        print("You Lose! Best of luck next time!")
+        display_board(game_state.board, hide_king=False, king_pos=king_pos)
+        solution_analysis(game_state, king_pos, game_won=False)
 
 if __name__ == "__main__":
     chessgame()
