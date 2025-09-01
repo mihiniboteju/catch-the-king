@@ -32,8 +32,8 @@ def checkmate(board_str):
     # Pawn attack rule
     # =============================
     def pawn_attacks(yk, xk, py, px):
-        # pawns move "up", so they only attack from y-1
-        return (py == yk - 1 and (px == xk - 1 or px == xk + 1))
+    # Pawns attack from one row BELOW the king
+        return (py == yk + 1 and (px == xk - 1 or px == xk + 1))
 
     # =============================
     # BFS layer by layer
