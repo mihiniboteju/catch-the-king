@@ -1,10 +1,15 @@
 import pygame
 import sys
+import os
+from game_main import GameScene
+
+DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(DIR, "Asset")
 
 # --- Constants ---
 WIDTH, HEIGHT = 800, 600
 FPS = 60
-FONT_NAME = "Front/PixelifySans-VariableFont_wght.ttf"
+FONT_NAME = os.path.join(ASSETS_DIR,"PixelifySans-VariableFont_wght.ttf")
 BG_COLOR = (30, 30, 40)
 WHITE = (255, 255, 255)
 GRAY = (120, 120, 120)
@@ -14,6 +19,8 @@ RED = (200, 60, 60)
 BLACK = (0, 0, 0)
 BUTTON_COLOR = (50, 50, 70)
 BUTTON_HOVER = (80, 80, 120)
+
+
 
 # --- Utility Classes ---
 class Button:
@@ -60,7 +67,7 @@ class TitleScene(Scene):
     def __init__(self, game):
         super().__init__(game)
         # Load and scale the background image (must be present in the project directory)
-        self.bg_image = pygame.image.load("Front/title_bg_v2.png").convert()
+        self.bg_image = pygame.image.load(os.path.join(ASSETS_DIR,"title_bg_v2.png")).convert()
         self.bg_image = pygame.transform.scale(self.bg_image, (WIDTH, HEIGHT))
         self.font_med = pygame.font.Font(FONT_NAME, 32)
         btn_w, btn_h = 150, 50
@@ -92,7 +99,6 @@ class SettingScene(Scene):
     PIECES = [
         {"name": "Pawn", "min": 1, "max": 8, "color": WHITE},
         {"name": "Rook", "min": 1, "max": 2, "color": GRAY},
-        {"name": "Knight", "min": 1, "max": 2, "color": BLUE},
         {"name": "Bishop", "min": 1, "max": 2, "color": GREEN},
         {"name": "Queen", "min": 0, "max": 1, "color": RED},
     ]
@@ -150,7 +156,7 @@ class SettingScene(Scene):
 
     def start_game(self):
         settings = {piece["name"]: self.counts[i] for i, piece in enumerate(self.PIECES)}
-        self.game.change_scene(GameScene(self.game, settings))
+        self.game.change_scene(GameScene(settings))
 
     def handle_event(self, event):
         for minus_btn, plus_btn in self.buttons:
@@ -211,59 +217,59 @@ class SettingScene(Scene):
         self.start_button.draw(surface)
 
 # --- Game Scene ---
-class GameScene(Scene):
-    PIECE_ORDER = ["Pawn", "Rook", "Knight", "Bishop", "Queen"]
-    PIECE_IMAGE_FILES = {
-        "Pawn": "Front/W_Pawn.png",
-        "Rook": "Front/W_Rook.png",
-        "Knight": "Front/W_Knight.png",
-        "Bishop": "Front/W_Bishop.png",
-        "Queen": "Front/W_Queen.png",
-    }
+# class GameScene(Scene):
+#     PIECE_ORDER = ["Pawn", "Rook", "Knight", "Bishop", "Queen"]
+#     PIECE_IMAGE_FILES = {
+#         "Pawn": os.path.join(ASSETS_DIR,"W_Pawn.png"),
+#         "Rook": os.path.join(ASSETS_DIR,"W_Rook.png"),
+#         "Knight": os.path.join(ASSETS_DIR,"W_Knight.png"),
+#         "Bishop": os.path.join(ASSETS_DIR,"W_Bishop.png"),
+#         "Queen": os.path.join(ASSETS_DIR,"W_Queen.png"),
+#     }
 
-    def __init__(self, game, settings):
-        super().__init__(game)
-        self.settings = settings
-        self.font_title = pygame.font.Font(FONT_NAME, 48)
-        self.font_piece = pygame.font.Font(FONT_NAME, 24)
-        self.font_count = pygame.font.Font(FONT_NAME, 20)
-        # Load images for each piece
-        self.piece_images = {}
-        for name in self.PIECE_ORDER:
-            img = pygame.image.load(self.PIECE_IMAGE_FILES[name]).convert_alpha()
-            img = pygame.transform.smoothscale(img, (50, 100))
-            self.piece_images[name] = img
+#     def __init__(self, game, settings):
+#         super().__init__(game)
+#         self.settings = settings
+#         self.font_title = pygame.font.Font(FONT_NAME, 48)
+#         self.font_piece = pygame.font.Font(FONT_NAME, 24)
+#         self.font_count = pygame.font.Font(FONT_NAME, 20)
+#         # Load images for each piece
+#         self.piece_images = {}
+#         for name in self.PIECE_ORDER:
+#             img = pygame.image.load(self.PIECE_IMAGE_FILES[name]).convert_alpha()
+#             img = pygame.transform.smoothscale(img, (50, 100))
+#             self.piece_images[name] = img
 
-    def handle_event(self, event):
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.game.running = False
+#     def handle_event(self, event):
+#         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+#             self.game.running = False
 
-    def draw(self, surface):
-        surface.fill(BG_COLOR)
-        # Title
-        title_surf = self.font_title.render("Game Started!", True, WHITE)
-        title_rect = title_surf.get_rect(center=(WIDTH // 2, 80))
-        surface.blit(title_surf, title_rect)
-        # Piece images
-        piece_w, piece_h = 50, 100
-        margin_bottom = 80
-        spacing = WIDTH // len(self.PIECE_ORDER)
-        y_img = HEIGHT - margin_bottom - piece_h
-        y_text = HEIGHT - margin_bottom + 10
-        for i, name in enumerate(self.PIECE_ORDER):
-            x = spacing // 2 + i * spacing
-            img = self.piece_images[name]
-            img_rect = img.get_rect(center=(x, y_img + piece_h // 2))
-            surface.blit(img, img_rect)
-            # Piece name
-            name_surf = self.font_piece.render(name, True, WHITE)
-            name_rect = name_surf.get_rect(center=(x, y_text))
-            surface.blit(name_surf, name_rect)
-            # Count
-            count = self.settings[name]
-            count_surf = self.font_count.render(f"x {count}", True, WHITE)
-            count_rect = count_surf.get_rect(center=(x, y_text + 28))
-            surface.blit(count_surf, count_rect)
+#     def draw(self, surface):
+#         surface.fill(BG_COLOR)
+#         # Title
+#         title_surf = self.font_title.render("Game Started!", True, WHITE)
+#         title_rect = title_surf.get_rect(center=(WIDTH // 2, 80))
+#         surface.blit(title_surf, title_rect)
+#         # Piece images
+#         piece_w, piece_h = 50, 100
+#         margin_bottom = 80
+#         spacing = WIDTH // len(self.PIECE_ORDER)
+#         y_img = HEIGHT - margin_bottom - piece_h
+#         y_text = HEIGHT - margin_bottom + 10
+#         for i, name in enumerate(self.PIECE_ORDER):
+#             x = spacing // 2 + i * spacing
+#             img = self.piece_images[name]
+#             img_rect = img.get_rect(center=(x, y_img + piece_h // 2))
+#             surface.blit(img, img_rect)
+#             # Piece name
+#             name_surf = self.font_piece.render(name, True, WHITE)
+#             name_rect = name_surf.get_rect(center=(x, y_text))
+#             surface.blit(name_surf, name_rect)
+#             # Count
+#             count = self.settings[name]
+#             count_surf = self.font_count.render(f"x {count}", True, WHITE)
+#             count_rect = count_surf.get_rect(center=(x, y_text + 28))
+#             surface.blit(count_surf, count_rect)
 
 # --- Game Manager ---
 class Game:
@@ -284,7 +290,6 @@ class Game:
                     self.running = False
                 else:
                     self.scene.handle_event(event)
-            self.scene.update()
             self.scene.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(FPS)
