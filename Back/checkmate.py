@@ -1,9 +1,7 @@
 from collections import deque
 
 def checkmate(board_str):
-    # =============================
     # Parse board
-    # =============================
     board = []
     for row in board_str.strip().split("\n"):
         if " " in row:
@@ -28,16 +26,11 @@ def checkmate(board_str):
 
     yk, xk = king_pos
 
-    # =============================
     # Pawn attack rule
-    # =============================
     def pawn_attacks(yk, xk, py, px):
-    # Pawns attack from one row BELOW the king
         return (py == yk + 1 and (px == xk - 1 or px == xk + 1))
 
-    # =============================
     # BFS layer by layer
-    # =============================
     def is_king_in_check():
         visited = set()
         queue = deque([(yk, xk, 0)])  # (y, x, distance)

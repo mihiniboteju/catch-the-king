@@ -54,39 +54,6 @@ def check_win_possibility(game_state, king_pos):
                     print("Please Enter y or n")
             except:
                 print("Please Enter a valid choice")
-    
-# def find_solution(game_state, king_pos):
-#     offer_help = input("Do you want to see a possible solution to catch the King? (y/n): ").strip().lower()
-#     if offer_help == 'y':
-#         current_board = [row[:] for row in game_state.board]
-#         remaining = game_state.remaining_pieces.copy()
-#         solution = find_remaining_solution(current_board, remaining, king_pos)
-#         if not solution:
-#             print("No possible solution found with the remaining pieces.")
-
-
-# def solution_analysis(game_state, king_pos,game_won=False):
-#     if game_won:
-#         print("Congratulations on catching the King! You win!!!")
-#     else:
-#         print("Game Over!!! Best of luck next time!")
-#     while True:
-#         try:
-#             findcom_sol = input("\nDo you want to see the complete solution?(y/n)").strip().lower()
-#             if findcom_sol == 'y':
-#                 print("\n=== Complete Solution ===")
-#                 solution = find_complete_solution(king_pos, game_state.remaining_pieces, game_state.size)
-#                 if solution:
-#                     print(f"Total solution Move: {len(solution)}")
-#                 else:
-#                     print("No soulution found!!!")
-#             elif findcom_sol == 'n':
-#                 print("Thank You for Playing!!!")
-#             else:
-#                 print("Please Enter y or n")
-#         except:
-#             print("Please Enter a valid choice")
-#         break
             
 def chessgame():
     print("==== Let's Play Chess Game (Catch The King If You Can!!!) ====")
@@ -138,13 +105,6 @@ def chessgame():
     while any(count > 0 for count in game_state.remaining_pieces.values()):
         print(f"\nRemaining pieces: {game_state.remaining_pieces}")
         
-        # Check if player can still win before asking for piece input
-        # can_continue = check_win_possibility(game_state, king_pos)
-        # if not can_continue:
-        #     # Player chose to see that they can't win, but let them continue if they want
-        #     continue_anyway = input("\nDo you want to continue playing anyway? (y/n): ").strip().lower()
-        #     if continue_anyway != 'y':
-        #         break
         while True:
             piece = input("Choose a piece to place (Q/R/B/P): ").upper().strip()
             if piece in game_state.remaining_pieces:
@@ -171,7 +131,6 @@ def chessgame():
                     print("You Win!!!")
                     game_state.board[row][col] = piece
                     display_board(game_state.board, hide_king=False, king_pos=king_pos)
-                    #solution_analysis(game_state, king_pos, game_won=True)
                     return
                 
                 if (row, col) in game_state.used_positions:
@@ -207,7 +166,6 @@ def chessgame():
         print(f"The King was hiding at position ({king_row}, {king_col})")
         print("You Lose! Best of luck next time!")
         display_board(game_state.board, hide_king=False, king_pos=king_pos)
-        #solution_analysis(game_state, king_pos, game_won=False)
 
 if __name__ == "__main__":
     chessgame()

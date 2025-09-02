@@ -1,3 +1,4 @@
+from math import trunc
 import pygame
 import sys
 import os
@@ -246,6 +247,7 @@ class GameScene():
         
         # Game state variables
         self.game_won = False
+        self.solution = False
         self.game_over = False
         self.show_king = False
         
@@ -347,7 +349,7 @@ class GameScene():
             
             # End the game
             self.game_over = True
-            self.game_won = True
+            self.solution = True
             
             return True
         else:
@@ -377,6 +379,7 @@ class GameScene():
         
         # Reset game state variables
         self.game_won = False
+        self.solution = False
         self.game_over = False
         self.show_king = False
         
@@ -398,7 +401,7 @@ class GameScene():
                 self.game.running = False
             elif event.key == pygame.K_h and not self.game_over:
                 # Show AI hint
-                play_sfx(BUTTON_CLICK_SFX)  # Play button click sound
+                play_sfx(LOSE_SFX)  # Play button click sound
                 self.show_solution()
             elif event.key == pygame.K_a and not self.game_over:
                 # Check if still possible to win
@@ -466,6 +469,8 @@ class GameScene():
         if self.game_over:
             if self.game_won:
                 text = self.font.render("YOU WIN!", True, (0, 255, 0))
+            elif self.solution:
+                text = self.font.render("SOLUTION", True, (50, 50, 50))
             else:
                 text = self.font.render("GAME OVER - You Lose!", True, (255, 0, 0))
             
