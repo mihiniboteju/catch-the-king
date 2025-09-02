@@ -313,6 +313,7 @@ class GameScene():
         """Display the complete solution on the board"""
         # Get the complete solution - note the parameter order: (king_pos, available_pieces, board_size)
         solution = find_complete_solution(self.king_pos, self.game_state.remaining_pieces, BOARD_SIZE)
+        print(self.game_state.remaining_pieces)
         
         if solution:
             # Clear current board

@@ -98,10 +98,10 @@ class TitleScene(Scene):
 # --- Setting Scene ---
 class SettingScene(Scene):
     PIECES = [
-        {"name": "Pawn", "min": 1, "max": 8, "color": WHITE},
+        {"name": "Queen", "min": 0, "max": 1, "color": RED},
         {"name": "Rook", "min": 1, "max": 2, "color": GRAY},
         {"name": "Bishop", "min": 1, "max": 2, "color": GREEN},
-        {"name": "Queen", "min": 0, "max": 1, "color": RED},
+        {"name": "Pawn", "min": 1, "max": 8, "color": WHITE}
     ]
 
     def __init__(self, game):
