@@ -4,11 +4,11 @@ import os
 
 # Import backend functionality
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Back'))
-
 from gamestate import GameState
 from checkmate import checkmate
 from solver import can_still_win, find_remaining_solution, find_complete_solution
 import random
+import chessgame
 
 
 pygame.init()
@@ -199,12 +199,14 @@ class Piece(pygame.sprite.Sprite):
                     piece_y = grid_origin_y + row * CELL_SIZE - CELL_SIZE // 2 - 25
                     self.rect.topleft = (piece_x, piece_y)
                     self.grid_pos = (row, col)
+                    print(row,col)
                     GameScene.placed_positions.add((row, col))
                     self.locked = True
                     play_sfx(PIECE_PLACE_SFX)  # Play place sound
                     # Update backend game state
                     if scene and scene.game_state:
                         scene.update_backend_state(self.name, row, col)
+                        
                         
                 else:
                     # Invalid spot → return to panel
@@ -266,7 +268,7 @@ class GameScene():
             backend_piece = PIECE_MAPPING[piece_name]
             self.game_state.board[row][col] = backend_piece
             self.game_state.remaining_pieces[backend_piece] -= 1
-            
+            chessgame.display_board(self.game_state.board, hide_king=True)
             # Check win conditions
             self.check_win_conditions(row, col)
     
@@ -307,9 +309,48 @@ class GameScene():
         """Check if it's still possible to win with remaining pieces"""
         return can_still_win(self.game_state.board, self.game_state.remaining_pieces, self.king_pos)
     
-    def get_ai_hint(self):
-        """Get AI hint for remaining pieces"""
-        return find_remaining_solution(self.game_state.board, self.game_state.remaining_pieces, self.king_pos)
+    def show_solution(self):
+        """Display the complete solution on the board"""
+        # Get the complete solution - note the parameter order: (king_pos, available_pieces, board_size)
+        solution = find_complete_solution(self.king_pos, self.game_state.remaining_pieces, BOARD_SIZE)
+        
+        if solution:
+            # Clear current board
+            
+            # Place all pieces from the solution
+            for move in solution:
+                piece_type, row, col = move
+                # Convert backend piece type to frontend name
+                piece_name = None
+                for name, backend_type in PIECE_MAPPING.items():
+                    if backend_type == piece_type:
+                        piece_name = name
+                        break
+                
+                if piece_name:
+                    # Create piece at solution position
+                    piece_x = grid_origin_x + col * CELL_SIZE
+                    piece_y = grid_origin_y + row * CELL_SIZE - CELL_SIZE // 2 - 25
+                    
+                    solution_piece = Piece(piece_name, PIECE_IMG[piece_name], (piece_x, piece_y))
+                    solution_piece.grid_pos = (row, col)
+                    solution_piece.locked = True
+                    GameScene.placed_positions.add((row, col))
+                    self.pieces.add(solution_piece)
+                    
+                    # Update backend state
+                    self.game_state.board[row][col] = piece_type
+            
+            # Show the king
+            self.show_king = True
+            
+            # End the game
+            self.game_over = True
+            self.game_won = True
+            
+            return True
+        else:
+            return False
     
     def restart_game(self):
         """Restart the game with the same settings"""
@@ -357,11 +398,7 @@ class GameScene():
             elif event.key == pygame.K_h and not self.game_over:
                 # Show AI hint
                 play_sfx(BUTTON_CLICK_SFX)  # Play button click sound
-                hint = self.get_ai_hint()
-                if hint:
-                    print(f"AI Hint: {len(hint)} moves needed")
-                else:
-                    print("No solution found with remaining pieces")
+                self.show_solution()
             elif event.key == pygame.K_a and not self.game_over:
                 # Check if still possible to win
                 if self.can_still_win():
