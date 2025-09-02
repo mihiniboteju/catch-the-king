@@ -5,7 +5,7 @@ from game_main import GameScene
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(DIR, "Asset")
-
+BUTTON_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "Button press.wav"))
 # --- Constants ---
 WIDTH, HEIGHT = 800, 600
 FPS = 60
@@ -46,6 +46,7 @@ class Button:
             self.hovered = self.rect.collidepoint(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN and self.hovered:
             if event.button == 1:
+                BUTTON_SFX.play()
                 self.callback()
 
 # --- Scene Base ---
@@ -156,7 +157,7 @@ class SettingScene(Scene):
 
     def start_game(self):
         settings = {piece["name"]: self.counts[i] for i, piece in enumerate(self.PIECES)}
-        self.game.change_scene(GameScene(settings))
+        self.game.change_scene(GameScene(settings, self.game))
 
     def handle_event(self, event):
         for minus_btn, plus_btn in self.buttons:

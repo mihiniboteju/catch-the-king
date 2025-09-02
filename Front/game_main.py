@@ -4,12 +4,15 @@ import os
 
 # Import backend functionality
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Back'))
+
 from gamestate import GameState
 from checkmate import checkmate
 from solver import can_still_win, find_remaining_solution, find_complete_solution
 import random
 
+
 pygame.init()
+pygame.mixer.init()  # Initialize the mixer for sound
 
 # ---------------- Settings ----------------
 SCREEN_W, SCREEN_H = 700, 700
@@ -24,7 +27,26 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Define an assets folder
 ASSETS_DIR = os.path.join(BASE_DIR, "Asset")
+FONT = os.path.join(ASSETS_DIR,"PixelifySans-VariableFont_wght.ttf")
+use_font = pygame.font.Font(FONT, 32)
 
+# ---------------- Sound Effects ----------------
+# Load sound effects (you'll need to add these audio files to your Asset folder)
+try:
+    PIECE_PLACE_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "Piece Down.wav"))
+    PIECE_PICKUP_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "Piece Move.wav"))
+    WIN_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "win.wav"))
+    LOSE_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "lose.wav"))
+    BUTTON_CLICK_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "Button press.wav"))
+    RESTART_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR,"Restart.wav"))
+except:
+    # If sound files don't exist, create dummy sounds
+    PIECE_PLACE_SFX = None
+    PIECE_PICKUP_SFX = None
+    WIN_SFX = None
+    LOSE_SFX = None
+    BUTTON_CLICK_SFX = None
+    RESTART_SFX = None
 # board area size
 BOARD_PIXEL_SIZE = BOARD_SIZE * CELL_SIZE
 
@@ -67,6 +89,11 @@ PIECE_MAPPING = {
     "Pawn": "P"
 }
 
+def play_sfx(sound):
+    """Play a sound effect if it exists"""
+    if sound is not None:
+        sound.play()
+
 def draw_grid(surface):
     """Overlay grid lines for debugging alignment"""
     # Draw horizontal lines (rows)
@@ -103,7 +130,7 @@ class Piece(pygame.sprite.Sprite):
             Piece.stock_registry[name]["count"] += 1
 
         self.mouse_offset = (0, 0)
-        self.font = pygame.font.SysFont(None, 24)
+        self.font = pygame.font.Font(FONT, 24)  # Change to Arial font
 
     # ---------------- Event handling ----------------
     def update(self, events, scene=None):
@@ -119,10 +146,10 @@ class Piece(pygame.sprite.Sprite):
                         
                         mouse_x, mouse_y = pygame.mouse.get_pos()
                         # spawn new piece exactly at mouse position
-                        new_piece = Piece(self.name, PIECE_IMG[self.name], (mouse_x, mouse_y))
+                        new_piece = Piece(self.name, PIECE_IMG[self.name],(mouse_x-25, mouse_y-70))
                         new_piece.dragging = True
-                        new_piece.mouse_offset = (0, 0)  # No offset since we're spawning at mouse position
-
+                        new_piece.mouse_offset = (-25, -70)  # No offset since we're spawning at mouse position
+                        play_sfx(PIECE_PICKUP_SFX)
                         # remove icon when stock is empty
                         if stock_info["count"] == 0 and scene:
                             scene.pieces.remove(self)
@@ -134,6 +161,7 @@ class Piece(pygame.sprite.Sprite):
             if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
                 self.dragging = True
                 self.mouse_offset = (self.rect.x - event.pos[0], self.rect.y - event.pos[1])
+                  # Play pickup sound
             elif event.type == pygame.MOUSEBUTTONUP and self.dragging:
                 self.dragging = False
                 self.snap_to_grid(scene)
@@ -149,8 +177,8 @@ class Piece(pygame.sprite.Sprite):
         if self.is_stock:
             count = Piece.stock_registry[self.name]["count"]
             if count > 0:
-                text = self.font.render(str(count), True, (0, 0, 0))
-                surface.blit(text, (self.rect.right + 5, self.rect.y))
+                text = self.font.render("x "+str(count), True, (0, 0, 0))
+                surface.blit(text, (self.rect.right + 5, self.rect.y+80))
 
     # ---------------- Snap to grid ----------------
     def snap_to_grid(self, scene):
@@ -172,7 +200,8 @@ class Piece(pygame.sprite.Sprite):
                     self.rect.topleft = (piece_x, piece_y)
                     self.grid_pos = (row, col)
                     GameScene.placed_positions.add((row, col))
-                    
+                    self.locked = True
+                    play_sfx(PIECE_PLACE_SFX)  # Play place sound
                     # Update backend game state
                     if scene and scene.game_state:
                         scene.update_backend_state(self.name, row, col)
@@ -194,8 +223,9 @@ class Piece(pygame.sprite.Sprite):
 class GameScene():
     placed_positions = set()  # moved here so Piece.snap_to_grid works
 
-    def __init__(self, settings):
+    def __init__(self, settings, game):
         self.settings = settings
+        self.game = game  # Add the game reference
         self.pieces = pygame.sprite.Group()
         
         # Initialize backend game state
@@ -218,8 +248,8 @@ class GameScene():
         self.show_king = False
         
         # UI elements
-        self.font = pygame.font.SysFont(None, 36)
-        self.small_font = pygame.font.SysFont(None, 24)
+        self.font = pygame.font.Font(FONT, 24)  # Main game status font
+        self.small_font = pygame.font.Font(FONT, 24)
 
         # spawn stock icons with counts from settings
         x_offset = 20
@@ -240,6 +270,7 @@ class GameScene():
             # Check win conditions
             self.check_win_conditions(row, col)
     
+    
     def check_win_conditions(self, row, col):
         """Check if the game is won after placing a piece"""
         # Check if king was found
@@ -255,12 +286,15 @@ class GameScene():
             self.game_won = True
             self.game_over = True
             self.show_king = True
+            play_sfx(WIN_SFX)
             return
         
         # Check if no more pieces available
         if all(count == 0 for count in self.game_state.remaining_pieces.values()):
             self.game_over = True
             self.show_king = True
+            if not self.game_won:
+                play_sfx(LOSE_SFX)  # Play lose sound
     
     def board_to_string(self):
         """Convert backend board to string format for checkmate function"""
@@ -277,12 +311,52 @@ class GameScene():
         """Get AI hint for remaining pieces"""
         return find_remaining_solution(self.game_state.board, self.game_state.remaining_pieces, self.king_pos)
     
+    def restart_game(self):
+        """Restart the game with the same settings"""
+        # Clear all placed pieces
+        GameScene.placed_positions.clear()
+        
+        # Clear all pieces from the scene
+        self.pieces.empty()
+        
+        # Reset game state
+        self.game_state = GameState(BOARD_SIZE)
+        self.game_state.remaining_pieces = {}
+        
+        # Convert frontend settings to backend format
+        for piece_name, count in self.settings.items():
+            if piece_name in PIECE_MAPPING:
+                backend_piece = PIECE_MAPPING[piece_name]
+                self.game_state.remaining_pieces[backend_piece] = count
+        
+        # Generate new random king position
+        self.king_pos = (random.randint(0, BOARD_SIZE-1), random.randint(0, BOARD_SIZE-1))
+        self.game_state.used_positions.add(self.king_pos)
+        
+        # Reset game state variables
+        self.game_won = False
+        self.game_over = False
+        self.show_king = False
+        
+        # Reset stock registry
+        Piece.stock_registry.clear()
+        
+        # Spawn stock icons with counts from settings
+        x_offset = 20
+        for name, count in self.settings.items():
+            if count > 0:
+                stock_piece = Piece(name, PIECE_IMG[name], (x_offset, Piece.STOCK_Y), is_stock=True)
+                Piece.stock_registry[name] = {"count": count, "pos": (x_offset, Piece.STOCK_Y)}
+                self.pieces.add(stock_piece)
+                x_offset += CELL_SIZE + 60
+    
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
             elif event.key == pygame.K_h and not self.game_over:
                 # Show AI hint
+                play_sfx(BUTTON_CLICK_SFX)  # Play button click sound
                 hint = self.get_ai_hint()
                 if hint:
                     print(f"AI Hint: {len(hint)} moves needed")
@@ -294,6 +368,10 @@ class GameScene():
                     print("Still possible to win!")
                 else:
                     print("No possible way to catch the King!")
+            elif event.key == pygame.K_r and self.game_over:
+                # Reset the game with the same settings
+                self.restart_game()
+                play_sfx(RESTART_SFX)
 
     def draw(self, screens):
         screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
@@ -319,7 +397,7 @@ class GameScene():
             # Draw
             screen.fill(bg)
             screen.blit(board_img, board_rect)
-            draw_grid(screen)
+            # draw_grid(screen)
 
             # Draw king if game is over
             if self.show_king:
@@ -355,12 +433,15 @@ class GameScene():
             
             text_rect = text.get_rect(center=(SCREEN_W // 2, 50))
             screen.blit(text, text_rect)
+            
+            # Draw restart instruction
+            restart_text = self.font.render("Press R to Restart", True, (0, 0, 255))
+            restart_rect = restart_text.get_rect(center=(SCREEN_W // 2, 100))
+            screen.blit(restart_text, restart_rect)
         
         # Draw controls hint
         controls = [
-            "Press H for AI hint",
-            "Press A to check win possibility",
-            "Press ESC to quit"
+            "Press H for solution",
         ]
         
         y_offset = 50
