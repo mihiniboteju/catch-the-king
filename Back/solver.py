@@ -1,5 +1,30 @@
 from checkmate import checkmate
 from gamestate import GameState
+import heapq
+
+def heuristic(board, king_pos):
+    score = 0
+    ky, kx = king_pos
+
+    for y in range(len(board)):
+        for x in range(len(board)):
+            piece = board[y][x]
+            if piece == '.': 
+                continue
+            dist = abs(ky - y) + abs(kx - x)
+            if piece == 'Q':
+                score += 5 / (dist + 1)
+            elif piece == 'R':
+                if y == ky or x == kx:
+                    score += 4 / (dist + 1)
+            elif piece == 'B':
+                if abs(ky - y) == abs(kx - x):
+                    score += 3 / (dist + 1)
+            elif piece == 'P':
+                if ky == y - 1 and abs(kx - x) == 1:
+                    score += 2
+    return -score  
+
 
 def get_empty_squares(board):
     empty = []
@@ -27,32 +52,42 @@ def board_to_string(board, king_pos):
     test_board[king_row][king_col] = 'K'
     return '\n'.join(' '.join(row) for row in test_board)
 
-def dfs_search(state, king_pos, find_solution=False, solution=None):
-    if solution is None:
-        solution = []
+def astar_search(state, king_pos):
+    start_board_str = board_to_string(state.board, king_pos)
+    frontier = []
+    
+    counter = 0
+    h = heuristic(state.board, king_pos)
+    heapq.heappush(frontier, (h, counter, state, []))
+    
+    visited = set()
+
+    while frontier:
+        f, _, current_state, path = heapq.heappop(frontier)
+        board_str = board_to_string(current_state.board, king_pos)
         
-    board_str = board_to_string(state.board, king_pos)
-    if checkmate(board_str): #assuming checkmate return True/False
-        if find_solution:
-            return solution
-        return True
-    
-    if all(state.remaining_pieces[piece] == 0 for piece in state.remaining_pieces):
-        return [] if find_solution else False
-    
-    empty_squares = get_empty_squares(state.board)
-    
-    for row, col in empty_squares:
-        for piece, count in state.remaining_pieces.items():
-            if count > 0:
-                new_state = place_piece(state, piece, row, col)
-                new_solution = solution + [(piece, row, col)] if find_solution else []
-                result = dfs_search(new_state, king_pos, find_solution, new_solution)
-                if (find_solution and result) or (not find_solution and result):
-                    return result
-    if find_solution:
-        return []
-    return False
+        if board_str in visited:
+            continue
+        visited.add(board_str)
+
+        if checkmate(board_str):
+            return path
+        
+        for row, col in get_empty_squares(current_state.board):
+            for piece, count in current_state.remaining_pieces.items():
+                if count > 0:
+                    new_state = place_piece(current_state, piece, row, col)
+                    new_path = path + [(piece, row, col)]
+                    
+                    g = len(new_path)
+                    h = heuristic(new_state.board, king_pos)
+                    f_new = g + h
+                    
+                    counter += 1
+                    
+                    heapq.heappush(frontier, (f_new, counter, new_state, new_path))
+
+    return None
 
 def _create_game_state_from_board(current_board, remaining_pieces, king_pos):
     board_size = len(current_board)
@@ -70,13 +105,13 @@ def _create_game_state_from_board(current_board, remaining_pieces, king_pos):
 
 def can_still_win(current_board, remaining_pieces, king_pos):
     state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
-    return dfs_search(state, king_pos)
+    return astar_search(state, king_pos)
 
 def find_complete_solution(king_pos, available_pieces, board_size=8):
     initial_state = GameState(board_size)
     if available_pieces:
         initial_state.remaining_pieces = available_pieces.copy()
-    solution = dfs_search(initial_state, king_pos, find_solution=True)
+    solution = astar_search(initial_state, king_pos)#, find_solution=True)
     if solution:
         current_state = GameState(board_size)
         for i, (piece, row, col) in enumerate(solution, 1):
@@ -93,7 +128,7 @@ def find_complete_solution(king_pos, available_pieces, board_size=8):
 
 def find_remaining_solution(current_board, remaining_pieces, king_pos):
     state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
-    solution = dfs_search(state, king_pos, find_solution=True)
+    solution = astar_search(state, king_pos)#, find_solution=True)
     
     if solution:
         current_state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
