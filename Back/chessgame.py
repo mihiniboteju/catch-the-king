@@ -1,5 +1,5 @@
 from gamestate import GameState
-from checkmate import checkmate
+from checkmate import checkmate, checkmate_astar
 from solver import can_still_win, find_complete_solution, find_remaining_solution
 
 import random
@@ -24,22 +24,24 @@ def board_to_string(board, king_pos):
     test_board[king_row][king_col] = 'K'
     return '\n'.join(' '.join(row) for row in test_board)
 
-def check_win_possibility(game_state, king_pos):
+def check_win_possibility(game_state, king_pos,search_type):
     current_board = [row[:] for row in game_state.board]
     remaining = game_state.remaining_pieces.copy()
-    can_win = can_still_win(current_board, remaining, king_pos)
+    can_win = can_still_win(current_board, remaining, king_pos, search_type = search_type)
+    algo_name = "A*" if search_type == "astar" else "DFS"
+
     if not can_win:
-        print("No possible way to catch the King with the remaining pieces!You lose!!!")
+        print(f"\n[{algo_name} Analysis] No possible way to catch the King with the remaining pieces!You lose!!!")
         return False
     else:
-        print("There is still a possibility to catch the King with the remaining pieces!!!")
+        print(f"\n[{algo_name}] There is still a possibility to catch the King with the remaining pieces!!!")
         while True:
             try:
                 print("You Have option to choose Yes or No to see the Solution for remaining pieces. If you would like to see the solution, type 'y' and The soultion will show and the Game End. If not the game will continue!")
                 findrem_sol = input("\nDo you want to see the solution for remaining piece?(y/n)").strip().lower()
                 if findrem_sol == 'y':
-                    print("\n=== Solution with Remaining Pieces ===")
-                    solution = find_remaining_solution(current_board, remaining, king_pos)
+                    print(f"\n===v{algo_name}  Solution with Remaining Pieces ===")
+                    solution = find_remaining_solution(current_board, remaining, king_pos, search_type=search_type)
                     if solution:
                         print(f"Move needed with remaining pieces: {len(solution)}")
                     else:
@@ -57,7 +59,24 @@ def check_win_possibility(game_state, king_pos):
             
 def chessgame():
     print("==== Let's Play Chess Game (Catch The King If You Can!!!) ====")
-
+    #This is asking the option for the player
+    print("Choose Algorithm Type:")
+    print("1. Normal (DFS + BFS)")
+    print("2. A* Search")
+    while True:
+        choice = input("Enter your choice (1 or 2): ").strip()
+        if choice == '1':
+            search_type = 'dfs'
+            check_func = checkmate
+            print("\nUsing Normal Mode: BFS (Checkmate) + DFS (Solver)")
+            break
+        elif choice == '2':
+            search_type = 'astar'
+            check_func = checkmate_astar
+            print("\nUsing A* Mode: A* (Checkmate) + A* (Solver)")
+            break
+        else:
+            print("Invalid choice! Please enter 1 or 2.")
     board_size = 8
     piece_limits = {
         'Q': 1,
@@ -148,15 +167,23 @@ def chessgame():
         
         # This is for checking the checkmate condition
         board_str = board_to_string(game_state.board, king_pos)
-        if checkmate(board_str):
-            print("\nYou Win!!! You have successfully catched the King!!!")
-            display_board(game_state.board, hide_king=False, king_pos=king_pos)
-            #solution_analysis(game_state, king_pos, game_won=True)
-            return
+        
+        if search_type == "astar":
+            check_result, threat = check_func(board_str)
+            if check_result:
+                print(f"\nYou Win!!! A* detected King capture! Threat level: {threat}")
+                display_board(game_state.board, hide_king=False, king_pos=king_pos)
+                return
+        else:
+            if check_func(board_str):
+                print("\nYou Win!!! You have successfully catched the King!!!")
+                display_board(game_state.board, hide_king=False, king_pos=king_pos)
+                #solution_analysis(game_state, king_pos, game_won=True)
+                return
         
         # After placing a piece, check win possibility and offer solutions again
         print(f"\n=== Analysis after placing {piece} at ({row}, {col}) ===")
-        can_continue = check_win_possibility(game_state, king_pos)
+        can_continue = check_win_possibility(game_state, king_pos, search_type)
         if not can_continue:
             break
         
