@@ -1,4 +1,4 @@
-from checkmate import checkmate
+from checkmate import checkmate, checkmate_astar
 from gamestate import GameState
 import heapq
 
@@ -24,7 +24,6 @@ def heuristic(board, king_pos):
                 if ky == y - 1 and abs(kx - x) == 1:
                     score += 2
     return -score  
-
 
 def get_empty_squares(board):
     empty = []
@@ -69,8 +68,8 @@ def astar_search(state, king_pos):
         if board_str in visited:
             continue
         visited.add(board_str)
-
-        if checkmate(board_str):
+        is_check, _ = checkmate_astar(board_str)
+        if is_check:
             return path
         
         for row, col in get_empty_squares(current_state.board):
@@ -89,6 +88,33 @@ def astar_search(state, king_pos):
 
     return None
 
+def dfs_search(state, king_pos, find_solution=False, solution=None):
+    if solution is None:
+        solution = []
+        
+    board_str = board_to_string(state.board, king_pos)
+    if checkmate(board_str): #assuming checkmate return True/False
+        if find_solution:
+            return solution
+        return True
+    
+    if all(state.remaining_pieces[piece] == 0 for piece in state.remaining_pieces):
+        return [] if find_solution else False
+    
+    empty_squares = get_empty_squares(state.board)
+    
+    for row, col in empty_squares:
+        for piece, count in state.remaining_pieces.items():
+            if count > 0:
+                new_state = place_piece(state, piece, row, col)
+                new_solution = solution + [(piece, row, col)] if find_solution else []
+                result = dfs_search(new_state, king_pos, find_solution, new_solution)
+                if (find_solution and result) or (not find_solution and result):
+                    return result
+    if find_solution:
+        return []
+    return False
+
 def _create_game_state_from_board(current_board, remaining_pieces, king_pos):
     board_size = len(current_board)
     state = GameState(board_size)
@@ -103,15 +129,21 @@ def _create_game_state_from_board(current_board, remaining_pieces, king_pos):
     state.used_positions.add(king_pos)  # King position is also used
     return state
 
-def can_still_win(current_board, remaining_pieces, king_pos):
+def can_still_win(current_board, remaining_pieces, king_pos, search_type='astar'):
     state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
-    return astar_search(state, king_pos)
+    if search_type == 'astar':
+        return astar_search(state, king_pos)
+    return dfs_search(state, king_pos)
 
-def find_complete_solution(king_pos, available_pieces, board_size=8):
+def find_complete_solution(king_pos, available_pieces, board_size=8, search_type='astar'):
     initial_state = GameState(board_size)
     if available_pieces:
         initial_state.remaining_pieces = available_pieces.copy()
-    solution = astar_search(initial_state, king_pos)#, find_solution=True)
+    if search_type == 'astar':
+        solution = astar_search(initial_state, king_pos)
+    else:
+        solution = dfs_search(initial_state, king_pos, find_solution=True)
+    
     if solution:
         current_state = GameState(board_size)
         for i, (piece, row, col) in enumerate(solution, 1):
@@ -126,9 +158,12 @@ def find_complete_solution(king_pos, available_pieces, board_size=8):
         print("No solution exists for this king position")
         return None
 
-def find_remaining_solution(current_board, remaining_pieces, king_pos):
+def find_remaining_solution(current_board, remaining_pieces, king_pos, search_type='astar'):
     state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
-    solution = astar_search(state, king_pos)#, find_solution=True)
+    if search_type == 'astar':
+        solution = astar_search(state, king_pos)#, find_solution=True)
+    else:
+        solution = dfs_search(state, king_pos, find_solution=True)
     
     if solution:
         current_state = _create_game_state_from_board(current_board, remaining_pieces, king_pos)
@@ -146,25 +181,25 @@ def find_remaining_solution(current_board, remaining_pieces, king_pos):
         print("No solution possible with remaining pieces")
         return None
     
-# if __name__ == "__main__":
-#     # Test finding a solution
-#     print("Testing solution finder...")
-#     solution = find_complete_solution((1, 5))
+if __name__ == "__main__":
+    # Test finding a solution
+    print("Testing solution finder...")
+    # solution = find_complete_solution((1, 5))
 
-#     print("Testing remaining pieces finder...")
-#     remaining_pieces = {'Q': 0, 'R': 0, 'B': 0, 'P': 0}
-#     test_board = [['.', '.', '.', '.', '.', '.', '.', '.'],
-#                 ['.', '.', '.', '.', '.', '.', '.', '.'],
-#                 ['.', '.', '.', 'P', '.', '.', '.', '.'],
-#                 ['.', '.', '.', '.', '.', '.', '.', '.'],
-#                 ['.', 'P', '.', '.', '.', '.', '.', '.'],
-#                 ['.', '.', '.', '.', '.', '.', '.', '.'],
-#                 ['.', '.', '.', '.', '.', '.', '.', '.'],
-#                 ['.', '.', '.', '.', '.', '.', '.', '.']]
-#     solution = find_remaining_solution(test_board, remaining_pieces, (1, 5))
-    
-#     can_still_win_result = can_still_win(test_board, remaining_pieces, (1, 5))
-#     print(f"Can still win: {can_still_win_result}")
+    print("Testing remaining pieces finder...")
+    remaining_pieces = {'Q': 0, 'R': 1, 'B': 1, 'P': 1}
+    test_board = [['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', 'P', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', 'P', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.'],
+                ['.', '.', '.', '.', '.', '.', '.', '.']]
+    solution = find_remaining_solution(test_board, remaining_pieces, (1, 5))
+    solution = find_remaining_solution(test_board, remaining_pieces, (1, 5),search_type='dfs')
+    # can_still_win_result = can_still_win(test_board, remaining_pieces, (1, 5))
+    # print(f"Can still win: {can_still_win_result}")
                                         
     
 
