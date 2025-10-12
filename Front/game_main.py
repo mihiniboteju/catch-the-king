@@ -6,8 +6,8 @@ import os
 # Import backend functionality
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Back'))
 from gamestate import GameState
-from checkmate import checkmate
-from solver import can_still_win, find_remaining_solution, find_complete_solution
+import checkmate as checkmate_mod
+import solver as solver_mod
 import random
 import chessgame
 
@@ -226,9 +226,15 @@ class Piece(pygame.sprite.Sprite):
 class GameScene():
     placed_positions = set()  # moved here so Piece.snap_to_grid works
 
-    def __init__(self, settings, game):
+    def __init__(self, settings, game, use_astar=False):
+        """
+        settings: dict of frontend piece names -> counts
+        game: parent application object (optional)
+        use_astar: if True, prefer A* implementations for checkmate/solver if available
+        """
         self.settings = settings
         self.game = game  # Add the game reference
+        self.use_astar = use_astar
         self.pieces = pygame.sprite.Group()
         
         # Initialize backend game state
@@ -253,7 +259,10 @@ class GameScene():
         
         # UI elements
         self.font = pygame.font.Font(FONT, 24)  # Main game status font
-        self.small_font = pygame.font.Font(FONT, 24)
+        self.small_font = pygame.font.Font(FONT, 18)
+
+        # threat level (0-100). updated by update_threat_level()
+        self.threat_level = 0
 
         # spawn stock icons with counts from settings
         x_offset = 20
@@ -265,18 +274,17 @@ class GameScene():
                 x_offset += CELL_SIZE + 60
     
     def update_backend_state(self, piece_name, row, col):
-        """Update the backend game state when a piece is placed"""
-        if piece_name in PIECE_MAPPING:
-            backend_piece = PIECE_MAPPING[piece_name]
-            self.game_state.board[row][col] = backend_piece
-            self.game_state.remaining_pieces[backend_piece] -= 1
-            chessgame.display_board(self.game_state.board, hide_king=True)
-            # Check win conditions
-            self.check_win_conditions(row, col)
-    
-    
+        #  """Update the backend game state when a piece is placed"""
+         if piece_name in PIECE_MAPPING:
+             backend_piece = PIECE_MAPPING[piece_name]
+             self.game_state.board[row][col] = backend_piece
+             self.game_state.remaining_pieces[backend_piece] -= 1
+             chessgame.display_board(self.game_state.board, hide_king=True)
+             # Check win conditions
+             self.check_win_conditions(row, col)
+     
     def check_win_conditions(self, row, col):
-        """Check if the game is won after placing a piece"""
+        # """Check if the game is won after placing a piece"""
         # Check if king was found
         if (row, col) == self.king_pos:
             self.game_won = True
@@ -286,7 +294,25 @@ class GameScene():
         
         # Check for checkmate
         board_str = self.board_to_string()
-        if checkmate(board_str):
+        # Prefer A* checkmate if requested and available
+        if self.use_astar and hasattr(checkmate_mod, "checkmate_astar"):
+            result = checkmate_mod.checkmate_astar(board_str)
+            if isinstance(result, tuple):
+                in_check, threat = result[0], result[1]
+            else:
+                in_check = bool(result)
+                threat = 0
+        else:
+            in_check = checkmate_mod.checkmate(board_str)
+            threat = 0
+
+        # store latest threat level for UI
+        try:
+            self.threat_level = int(max(0, min(100, threat)))
+        except Exception:
+            self.threat_level = 0
+
+        if in_check:
             self.game_won = True
             self.game_over = True
             self.show_king = True
@@ -306,17 +332,30 @@ class GameScene():
         king_row, king_col = self.king_pos
         test_board[king_row][king_col] = 'K'
         return '\n'.join(' '.join(row) for row in test_board)
-    
+
+    def update_threat_level(self):
+        """Recompute threat level for UI (0-100). Calls checkmate_astar if available."""
+        board_str = self.board_to_string()
+        lamb ,threat = checkmate_mod.checkmate_astar(board_str)
+        self.threat_level = threat
+
     def can_still_win(self):
         """Check if it's still possible to win with remaining pieces"""
-        return can_still_win(self.game_state.board, self.game_state.remaining_pieces, self.king_pos)
+        # Prefer A* solver variant if requested and available, otherwise fallback
+        if self.use_astar:
+            return solver_mod.can_still_win(self.game_state.board, self.game_state.remaining_pieces, self.king_pos, 'astar')
+        else:
+            return solver_mod.can_still_win(self.game_state.board, self.game_state.remaining_pieces, self.king_pos, 'none')
     
     def show_solution(self):
         """Display the complete solution on the board"""
-        # Get the complete solution - note the parameter order: (king_pos, available_pieces, board_size)
-        solution = find_complete_solution(self.king_pos, self.game_state.remaining_pieces, BOARD_SIZE)
+        # Get the complete solution - prefer A* variant if requested and available
+        if self.use_astar:
+            solution = solver_mod.find_complete_solution(self.king_pos, self.game_state.remaining_pieces, BOARD_SIZE, 'astar')
+        else:
+            solution = solver_mod.find_complete_solution(self.king_pos, self.game_state.remaining_pieces, BOARD_SIZE, 'none')
         print(self.game_state.remaining_pieces)
-        
+         
         if solution:
             # Clear current board
             
@@ -455,8 +494,35 @@ class GameScene():
             for piece in self.pieces:
                 piece.draw(screen)
             
-            # Draw game status
+            # Update threat level for UI (cheap; can be throttled if needed)
+            
+
+            # Draw game status and threat UI
             self.draw_game_status(screen)
+
+            # --- Threat UI (top-right) ---
+            if (self.use_astar):
+                self.update_threat_level()
+                threat_text = self.small_font.render(f"Threat: {self.threat_level}", True, (0, 0, 0))
+                text_pos = (SCREEN_W - 160, 10)
+                screen.blit(threat_text, text_pos)
+
+                # draw threat bar background
+                bar_x, bar_y = SCREEN_W - 160, 36
+                bar_w, bar_h = 140, 14
+                pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_w, bar_h), border_radius=6)
+                # fill proportionally (0..100)
+                fill_w = int((self.threat_level / 100.0) * bar_w)
+                if fill_w > 0:
+                    # color gradient from green->yellow->red
+                    if self.threat_level < 50:
+                        color = (180, 220, 60)  # greenish
+                    elif self.threat_level < 80:
+                        color = (240, 200, 50)  # yellowish
+                    else:
+                        color = (220, 80, 60)   # red
+                    pygame.draw.rect(screen, color, (bar_x + 1, bar_y + 1, max(0, fill_w - 2), bar_h - 2), border_radius=6)
+
 
             pygame.display.flip()
             clock.tick(60)

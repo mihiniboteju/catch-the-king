@@ -49,6 +49,7 @@ class Button:
                 BUTTON_SFX.play()
                 self.callback()
 
+
 # --- Scene Base ---
 class Scene:
     def __init__(self, game):
@@ -111,8 +112,10 @@ class SettingScene(Scene):
         self.font_btn = pygame.font.Font(FONT_NAME, 24)
         self.counts = [piece["min"] for piece in self.PIECES]
         self.buttons = []
+        self.toggle_value = False
         self.create_piece_buttons()
         # Start button
+       
         btn_w, btn_h = 180, 50
         btn_x = (WIDTH - btn_w) // 2
         btn_y = HEIGHT - 80
@@ -121,6 +124,12 @@ class SettingScene(Scene):
             text="Start",
             font=self.font_btn,
             callback=self.start_game
+        )
+        self.toggle_button = Button(
+            rect=(btn_x, btn_y - 80, btn_w, btn_h),
+            text="Mode:Heuristic",
+            font=self.font_btn,
+            callback=self.toggle_mode
         )
 
     def create_piece_buttons(self):
@@ -157,7 +166,11 @@ class SettingScene(Scene):
 
     def start_game(self):
         settings = {piece["name"]: self.counts[i] for i, piece in enumerate(self.PIECES)}
-        self.game.change_scene(GameScene(settings, self.game))
+        self.game.change_scene(GameScene(settings, self.game, self.toggle_value))
+
+    def toggle_mode(self):
+        self.toggle_value = not self.toggle_value
+        self.toggle_button.text = "Mode: A*" if self.toggle_value else "Mode: Heuristic"
 
     def handle_event(self, event):
         for minus_btn, plus_btn in self.buttons:
@@ -166,6 +179,7 @@ class SettingScene(Scene):
             if plus_btn:
                 plus_btn.handle_event(event)
         self.start_button.handle_event(event)
+        self.toggle_button.handle_event(event)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.game.running = False
 
@@ -215,6 +229,7 @@ class SettingScene(Scene):
                 plus_btn.rect.topleft = (x, y)
                 plus_btn.draw(surface)
         # Start button
+        self.toggle_button.draw(surface)
         self.start_button.draw(surface)
 
 # --- Game Scene ---
