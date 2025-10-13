@@ -126,8 +126,8 @@ class SettingScene(Scene):
             callback=self.start_game
         )
         self.toggle_button = Button(
-            rect=(btn_x, btn_y - 80, btn_w, btn_h),
-            text="Mode:Heuristic",
+            rect=(btn_x - 20, btn_y - 80, btn_w +40, btn_h),
+            text="Mode: Blind Search",
             font=self.font_btn,
             callback=self.toggle_mode
         )
@@ -170,7 +170,7 @@ class SettingScene(Scene):
 
     def toggle_mode(self):
         self.toggle_value = not self.toggle_value
-        self.toggle_button.text = "Mode: A*" if self.toggle_value else "Mode: Heuristic"
+        self.toggle_button.text = "Mode: Heuristic" if self.toggle_value else "Mode: Blind Search"
 
     def handle_event(self, event):
         for minus_btn, plus_btn in self.buttons:
