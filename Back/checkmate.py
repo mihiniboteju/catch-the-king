@@ -34,6 +34,39 @@ def checkmate(board_str):
 
     # BFS layer by layer
     def is_king_in_check():
+        def has_clear_path(from_y, from_x, to_y, to_x):
+            """
+            Check if the path between two positions is clear (no blocking pieces).
+            Used for sliding pieces: Rook, Bishop, Queen.
+            
+            Args:
+                from_y, from_x: Starting position (piece location)
+                to_y, to_x: Ending position (king location)
+            
+            Returns:
+                True if all cells between start and end are empty, False otherwise
+            """
+            # Calculate step direction for each axis (-1, 0, or 1)
+            # This determines how to step from the piece toward the king
+            # Examples:
+            #   Rook (horizontal): dy=0, dx=±1 (move left/right only)
+            #   Rook (vertical):   dy=±1, dx=0 (move up/down only)
+            #   Bishop (diagonal): dy=±1, dx=±1 (move diagonally)
+            #   Queen: any combination of the above
+            dy = 0 if from_y == to_y else (1 if to_y > from_y else -1)
+            dx = 0 if from_x == to_x else (1 if to_x > from_x else -1)
+            
+            # Start from next cell after the piece
+            y, x = from_y + dy, from_x + dx
+            
+            # Walk along the path until we reach the king
+            while (y, x) != (to_y, to_x):
+                if board[y][x] != '.':
+                    return False  # Path is blocked by another piece
+                y, x = y + dy, x + dx
+            
+            return True  # Path is clear
+        
         visited = set()
         queue = deque([(yk, xk, 0)])  # (y, x, distance)
 
@@ -43,20 +76,28 @@ def checkmate(board_str):
                 continue
             visited.add((y, x))
 
-            # skip king’s own square
+            # skip king's own square
             if d > 0:
                 piece = board[y][x]
                 if piece != '.':
-                    # Check piece rules
+                    # Check piece rules with line-of-sight validation for sliding pieces
+                    # Pawn: one-square diagonal attack (no blocking possible)
                     if piece == 'P' and pawn_attacks(yk, xk, y, x):
                         return True
-                    if piece == 'R' and (y == yk or x == xk):
+                    
+                    # Rook: horizontal or vertical attack (check for blockers)
+                    if piece == 'R' and (y == yk or x == xk) and has_clear_path(y, x, yk, xk):
                         return True
-                    if piece == 'B' and abs(y - yk) == abs(x - xk):
+                    
+                    # Bishop: diagonal attack (check for blockers)
+                    if piece == 'B' and abs(y - yk) == abs(x - xk) and has_clear_path(y, x, yk, xk):
                         return True
-                    if piece == 'Q' and (y == yk or x == xk or abs(y - yk) == abs(x - xk)):
+                    
+                    # Queen: horizontal, vertical, or diagonal attack (check for blockers)
+                    if piece == 'Q' and (y == yk or x == xk or abs(y - yk) == abs(x - xk)) and has_clear_path(y, x, yk, xk):
                         return True
-                    # Blocked by another piece
+                    
+                    # Stop expansion from this piece (optimization: reduces cells visited)
                     continue
 
             # expand neighbors layer by layer
