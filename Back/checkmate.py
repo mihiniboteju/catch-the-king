@@ -119,13 +119,65 @@ def checkmate_astar(board_str):
     yk, xk = king_pos
 
     def pawn_attacks(yk, xk, py, px):
+        """Check if pawn at (py, px) attacks king at (yk, xk)."""
         return (py == yk + 1 and (px == xk - 1 or px == xk + 1))
 
+    def has_clear_path(from_y, from_x, to_y, to_x):
+        """
+        Check if the path between two positions is clear (no blocking pieces).
+        Used for sliding pieces: Rook, Bishop, Queen.
+        
+        Args:
+            from_y, from_x: Starting position (piece location)
+            to_y, to_x: Ending position (king location)
+        
+        Returns:
+            True if all cells between start and end are empty, False otherwise
+        """
+        # Calculate step direction for each axis (-1, 0, or 1)
+       
+        dy = 0 if from_y == to_y else (1 if to_y > from_y else -1)
+        dx = 0 if from_x == to_x else (1 if to_x > from_x else -1)
+        
+        # Start from next cell after the piece
+        y, x = from_y + dy, from_x + dx
+        
+        # Walk along the path until we reach the king
+        while (y, x) != (to_y, to_x):
+            if board[y][x] != '.':
+                return False  # Path is blocked by another piece
+            y, x = y + dy, x + dx
+        
+        return True  # Path is clear
+
     def is_attacking(piece, py, px):
-        if piece == 'P' and pawn_attacks(yk, xk, py, px): return True
-        if piece == 'R' and (py == yk or px == xk): return True
-        if piece == 'B' and abs(py - yk) == abs(px - xk): return True
-        if piece == 'Q' and (py == yk or px == xk or abs(py - yk) == abs(px - xk)): return True
+        """
+        Check if a piece at (py, px) is attacking the king at (yk, xk).
+        For sliding pieces (R, B, Q), also verifies the path is not blocked.
+        
+        Args:
+            piece: Piece type ('P', 'R', 'B', 'Q')
+            py, px: Position of the piece
+        
+        Returns:
+            True if the piece attacks the king with a clear path
+        """
+        # Pawn: one-square diagonal attack (no blocking possible)
+        if piece == 'P' and pawn_attacks(yk, xk, py, px):
+            return True
+        
+        # Rook: horizontal or vertical attack (check for blockers)
+        if piece == 'R' and (py == yk or px == xk):
+            return has_clear_path(py, px, yk, xk)
+        
+        # Bishop: diagonal attack (check for blockers)
+        if piece == 'B' and abs(py - yk) == abs(px - xk):
+            return has_clear_path(py, px, yk, xk)
+        
+        # Queen: horizontal, vertical, or diagonal attack (check for blockers)
+        if piece == 'Q' and (py == yk or px == xk or abs(py - yk) == abs(px - xk)):
+            return has_clear_path(py, px, yk, xk)
+        
         return False
 
     enemies = [(y, x, board[y][x]) for y in range(size) for x in range(size)
