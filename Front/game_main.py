@@ -434,6 +434,11 @@ class GameScene():
                 self.pieces.add(stock_piece)
                 x_offset += CELL_SIZE + 60
     
+    def return_to_home(self):
+        """Return to settings menu to choose new piece counts"""
+        from game_menu import SettingScene
+        self.game.change_scene(SettingScene(self.game))
+    
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -452,6 +457,10 @@ class GameScene():
                 # Reset the game with the same settings
                 self.restart_game()
                 play_sfx(RESTART_SFX)
+            elif event.key == pygame.K_m and self.game_over:
+                # Return to menu
+                self.return_to_home()
+                play_sfx(BUTTON_CLICK_SFX)
 
     def draw(self, screens):
         screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
@@ -544,17 +553,23 @@ class GameScene():
             screen.blit(text, text_rect)
             
             # Draw restart instruction
-            restart_text = self.font.render("Press R to Restart", True, (0, 0, 255))
+            restart_text = self.small_font.render("Press R to Restart", True, (0, 0, 255))
             restart_rect = restart_text.get_rect(center=(SCREEN_W // 2, 100))
             screen.blit(restart_text, restart_rect)
+            
+            # Draw menu instruction
+            menu_text = self.small_font.render("Press M for Menu", True, (0, 0, 255))
+            menu_rect = menu_text.get_rect(center=(SCREEN_W // 2, 120))
+            screen.blit(menu_text, menu_rect)
         
-        # Draw controls hint
-        controls = [
-            "Press H for solution",
-        ]
-        
-        y_offset = 50
-        for control in controls:
-            text = self.small_font.render(control, True, (0, 0, 0))
-            screen.blit(text, (10, y_offset))
-            y_offset += 25
+        # Draw controls hint (only during gameplay)
+        if not self.game_over:
+            controls = [
+                "Press H for solution",
+            ]
+            
+            y_offset = 50
+            for control in controls:
+                text = self.small_font.render(control, True, (0, 0, 0))
+                screen.blit(text, (10, y_offset))
+                y_offset += 25
