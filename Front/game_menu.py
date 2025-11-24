@@ -7,7 +7,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(DIR, "Asset")
 BUTTON_SFX = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "Button press.wav"))
 # --- Constants ---
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 700, 700
 FPS = 60
 FONT_NAME = os.path.join(ASSETS_DIR,"PixelifySans-VariableFont_wght.ttf")
 BG_COLOR = (30, 30, 40)
@@ -69,7 +69,7 @@ class TitleScene(Scene):
     def __init__(self, game):
         super().__init__(game)
         # Load and scale the background image (must be present in the project directory)
-        self.bg_image = pygame.image.load(os.path.join(ASSETS_DIR,"title_bg_v2.png")).convert()
+        self.bg_image = pygame.image.load(os.path.join(ASSETS_DIR,"title_bg_v3.png")).convert()
         self.bg_image = pygame.transform.scale(self.bg_image, (WIDTH, HEIGHT))
         self.font_med = pygame.font.Font(FONT_NAME, 32)
         btn_w, btn_h = 150, 50
