@@ -438,6 +438,7 @@ class GameScene():
         """Return to settings menu to choose new piece counts"""
         from game_menu import SettingScene
         self.game.change_scene(SettingScene(self.game))
+        self.running = False  # Exit the game loop to switch scenes
     
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -464,14 +465,14 @@ class GameScene():
 
     def draw(self, screens):
         screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-        running = True
-        while running:
+        self.running = True  # Make running an instance variable
+        while self.running:
             events = pygame.event.get()
             for event in events:
                 if event.type == pygame.QUIT:
-                    running = False
+                    self.running = False
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    running = False
+                    self.running = False
                 
                 # Handle game events
                 self.handle_event(event)
@@ -536,8 +537,7 @@ class GameScene():
             pygame.display.flip()
             clock.tick(60)
 
-        pygame.quit()
-        sys.exit()
+        # Don't quit pygame here - return control to main game loop
     
     def draw_game_status(self, screen):
         """Draw game status messages"""
