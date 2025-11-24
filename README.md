@@ -2,15 +2,6 @@
 
 A chess puzzle game where you place pieces on a board to put the opponent's King in checkmate using AI-powered solvers.
 
-## Screenshots
-
-<!-- TODO: Add screenshots -->
-<!-- ![Game Menu](images/menu.png) -->
-<!-- *Main menu screen* -->
-
-<!-- ![Gameplay](images/gameplay.png) -->
-<!-- *Strategic piece placement to create checkmate* -->
-
 ## Overview
 
 This game challenges you to create checkmate positions by strategically placing chess pieces (Queens, Rooks, Bishops, Pawns) on an 8×8 board with a fixed King position. The AI solver uses advanced search algorithms (DFS and A*) to find solutions.
@@ -22,6 +13,33 @@ This game challenges you to create checkmate positions by strategically placing 
 - **Checkmate Detection**: BFS and A* algorithms for validation
 - **Threat Level Scoring**: Evaluates how dangerous each position is
 - **Sound Effects**: Audio feedback for moves and game events
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/title-scene.png" alt="Title Scene" width="350"/>
+  <br/><em>Title Screen</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/game-scene.png" alt="Game Scene" width="350"/>
+  <br/><em>Gameplay Screen</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/setting-scene.png" alt="Settings Scene" width="350"/>
+  <br/><em>Settings Screen</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/win-scene.png" alt="Win Scene" width="350"/>
+  <br/><em>Win Screen</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/lose-scene.png" alt="Lose Scene" width="350"/>
+  <br/><em>Lose Screen</em>
+</p>
 
 ## Getting Started
 
